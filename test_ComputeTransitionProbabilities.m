@@ -1,6 +1,6 @@
 function tests = test_ComputeTransitionProbabilities
 %TEST_COMPUTETRANSITIONPROBABILITIES
-%   To run: runtests('test_ComputeTransitionProbabilties.m')
+%   To run: runtests('test_ComputeTransitionProbabilities.m')
     tests = functiontests(localfunctions);
 end
 
