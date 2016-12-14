@@ -44,4 +44,61 @@ function G = ComputeStageCosts( stateSpace, controlSpace, map, gate, mansion, ca
 
 % put your code here
 
+n_states = size(stateSpace,1);
+n_controls = size(controlSpace, 1);
+global detected_additional_time_steps;
+global pool_num_time_steps;
+
+% Detection and success probabilities for each state
+detectionSpace = ComputeDetectionSpace(stateSpace, cameras, map);
+successSpace = ComputeSuccessSpace(stateSpace, mansion, map);
+
+% Initialize G with infinity (infinite costs for impossible moves)
+G = Inf * ones(n_states, n_controls);
+
+% Differences to get new state from current state (n w s e)
+n_movements = 4;
+state_diffs = [0 1; -1 0; 0 -1; 1 0];
+
+% Iterate over states
+for i_state = 1:n_states
+    state = stateSpace(i_state, :);
+    target_states = repmat(state, n_movements, 1) + state_diffs;
+    % Not all target states are reachable
+    [~, indices] = ismember(target_states, stateSpace, 'rows');
+    
+    for i_control = 1:n_movements
+        i_target = indices(i_control);
+        if  i_target ~= 0
+            % Check if target is a pool, this will increase costs
+            % Careful: While indexing the map, we need to reverse the state
+            % Thats why we use [2 1] to swap the elements
+            if map(stateSpace(i_target, [2 1])) >= 0
+                % no pool
+                cost = 1;
+            else
+                cost = pool_num_time_steps;
+            end
+            
+            % chance to be detected (extra cost to move to gate)
+            p_det = detectionSpace(i_target);
+            
+            G(i_state, i_control) = (...
+                (cost + detected_additional_time_steps) * p_det + ...
+                cost * (1 - p_det));   
+        end
+    end
+
+    % Taking picture has different costs
+    p_success = successSpace(i_state);
+    p_detected = detectionSpace(i_state);
+    G(i_state, 5) = (...
+        p_success * 1 + ...
+        (1 - p_success) * (...
+            p_detected * (1 + detected_additional_time_steps) + ...
+        	(1 - p_detected) * 1 ...
+        )...
+    );
+
+end
 end
