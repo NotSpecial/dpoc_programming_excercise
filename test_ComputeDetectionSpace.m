@@ -1,5 +1,5 @@
 function tests = test_ComputeDetectionSpace
-%TEST_FREEDISTANCES Test the ComputeDetectionSpace function
+%TEST_COMPUTEDETECTIONSPACE Test the ComputeDetectionSpace function
 %   To run: runtests('test_ComputeDetectionSpace.m')
     tests = functiontests(localfunctions);
 end
