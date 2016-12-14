@@ -65,6 +65,16 @@ function test_multiple(testCase)
 % Test that the function is correctly applied to several cameras etc.
     % Setup: 4 cameras in different distances and directions
     testMap = zeros(9, 9);
-    cameras = [4 5; 
+    cameras = [4 5; 5 3; 8 5; 5 9; 9 9];
+    n_cams = length(cameras);
+    for i=1:n_cams
+        testMap(cameras(i, [2 1])) = 0.5;
+    end
+    
+    position = [5 5];  % Middle
+    
+    expected = [1; 2; 3; 4; Inf];
+    actual = FreeDistances(position, cameras, testMap);
+    verifyEqual(testCase, actual, expected);
 end
 
