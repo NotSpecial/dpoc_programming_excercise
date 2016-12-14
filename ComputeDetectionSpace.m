@@ -17,7 +17,7 @@ function p = detection_probability (state, cameras, map)
     global pool_num_time_steps;
     % Careful with map indexing! Coordinates need to be swapped.
     if map(state(2), state(1)) < 0
-        p = 1 - (1 - p) ^ pool_num_time_steps;
+        p = 1 - (1 - p) .^ pool_num_time_steps;
     end
     
     % Probability to be seen by any camera:
