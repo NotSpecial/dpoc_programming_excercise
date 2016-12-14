@@ -42,6 +42,54 @@ function P = ComputeTransitionProbabilities( stateSpace, controlSpace, map, gate
 %           The entry P(i, j, l) represents the transition probability
 %           from state i to state j if control input l is applied.
 
-% put your code here
+n_states = size(stateSpace,1);
+n_controls = size(controlSpace, 1);
+P = zeros(n_states, n_states, n_controls);
+
+% Detection and success probabilities for each state
+detectionSpace = ComputeDetectionSpace(stateSpace, cameras, map);
+successSpace = ComputeSuccessSpace(stateSpace, mansion, map);
+
+[~, gate_index] = ismember(gate, stateSpace, 'rows');
+
+comparisons = {...
+    % North
+    @(i,j) stateSpace(i, :) + [0 1] == stateSpace(j, :);
+    % West
+    @(i,j) stateSpace(i, :) + [-1 0] == stateSpace(j, :);
+    % South
+    @(i,j) stateSpace(i, :) + [0 -1] == stateSpace(j, :);
+    % East
+    @(i,j) stateSpace(i, :) + [1 0] == stateSpace(j, :);
+    % Picture
+    @(i,j) i == j
+};
+
+for u = 1:n_controls
+    comparison = comparisons{u};   
+    for i = 1:n_states
+        for j = 1:n_states
+            if comparison(i,j)
+                if u~=5
+                    % Probability for movements
+                    p_detected = detectionSpace(j);
+                    P(i,j, u) = 1 - p_detected;
+                    P(i, gate_index, u) = P(i, gate_index, u) + p_detected;
+                else
+                    % Probability if taking picture
+                    % Assumtion: Taking a successful picture counts as
+                    % transition i > i
+                    % Note, j == i here
+                    p_success = successSpace(j);
+                    p_detected = detectionSpace(j);
+                    P(i, j, u) = p_success + ...
+                                 (1 - p_success) * (1 - p_detected);
+                    P(i, gate_index, u) = P(i, gate_index, u) + ...
+                                          (1 - p_success) * p_detected;
+                end
+            end
+        end
+    end
+end
 
 end
