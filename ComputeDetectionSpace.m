@@ -16,7 +16,7 @@ function p = detection_probability (state, cameras, map)
     % If in pond camera can check 4 times
     global pool_num_time_steps;
     % Careful with map indexing! Coordinates need to be swapped.
-    if map(state([2 1])) < 0
+    if map(state(2), state(1)) < 0
         p = 1 - (1 - p) ^ pool_num_time_steps;
     end
     
