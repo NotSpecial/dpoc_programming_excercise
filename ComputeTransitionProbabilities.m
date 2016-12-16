@@ -74,18 +74,23 @@ for u = 1:n_controls
                     % Probability for movements
                     p_detected = detectionSpace(j);
                     P(i,j, u) = 1 - p_detected;
-                    P(i, gate_index, u) = P(i, gate_index, u) + p_detected;
+                    % Detected -> move to gate
+                    P(i, gate_index, u) = p_detected;
                 else
-                    % Probability if taking picture
-                    % Assumtion: Taking a successful picture counts as
-                    % transition i > i
+                    % Probability of taking picture
+                    % If we are successful there will be no transition
+                    % anymore
                     % Note, j == i here
                     p_success = successSpace(j);
                     p_detected = detectionSpace(j);
-                    P(i, j, u) = p_success + ...
-                                 (1 - p_success) * (1 - p_detected);
-                    P(i, gate_index, u) = P(i, gate_index, u) + ...
-                                          (1 - p_success) * p_detected;
+                    if i ~= gate_index
+                        P(i, j, u) = (1 - p_success) * (1 - p_detected);
+                        P(i, gate_index, u) = (1 - p_success) * p_detected;
+                    else
+                        % Doesnt matter wheter we are detected, we are 
+                        % already at the gate
+                         P(i, j, u) = (1 - p_success);
+                    end
                 end
             end
         end

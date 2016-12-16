@@ -29,12 +29,14 @@ function test_all(testCase)
     verifyEqual(testCase, P(2, 1, 4), p_detected);
     
     % Taking a picture with no chance of being detected
-    verifyEqual(testCase, P(2, 2, 5), 1);
+    % We still have 0.1% Chance of success -> no transition
+    verifyEqual(testCase, P(2, 2, 5), 0.999);
     
     % Taking a picture with chance of being detected (state 4)
-    p_detected = 0.25;  % Can only be detected if no success
-    verifyEqual(testCase, P(4, 4, 5), 1 - p_detected);
-    verifyEqual(testCase, P(4, 1, 5), p_detected);
+    % 50% chance of success. Only if no success 50% chance of being
+    % detected
+    verifyEqual(testCase, P(4, 4, 5), 0.25);
+    verifyEqual(testCase, P(4, 1, 5), 0.25);
     
     % Moving without Chance of being detected
     verifyEqual(testCase, P(4, 2, 3), 1);
