@@ -42,10 +42,10 @@ function G = ComputeStageCosts( stateSpace, controlSpace, map, gate, mansion, ca
 %           represents the cost if we are in state i and apply control
 %           input l.
 
-% put your code here
+global debug
+start = tic;
 
 n_states = size(stateSpace,1);
-n_controls = size(controlSpace, 1);
 global detected_additional_time_steps;
 global pool_num_time_steps;
 
@@ -54,7 +54,7 @@ detectionSpace = ComputeDetectionSpace(stateSpace, cameras, map);
 successSpace = ComputeSuccessSpace(stateSpace, mansion, map);
 
 % Initialize G with infinity (infinite costs for impossible moves)
-G = Inf * ones(n_states, n_controls);
+G = Inf * ones(n_states, 5);
 
 % Differences to get new state from current state (n w s e)
 n_movements = 4;
@@ -62,13 +62,16 @@ state_diffs = [0 1; -1 0; 0 -1; 1 0];
 
 % Iterate over states
 for i_state = 1:n_states
+    % Control Input: Move
+    % Get target state indices for each movement
+    % Not all targets are valid states (index will be 0)
+    % Add position difference to state and look if result is in stateSpace
     state = stateSpace(i_state, :);
     target_states = repmat(state, n_movements, 1) + state_diffs;
-    % Not all target states are reachable
     [~, indices] = ismember(target_states, stateSpace, 'rows');
     
-    for i_control = 1:n_movements
-        i_target = indices(i_control);
+    for u = 1:n_movements
+        i_target = indices(u);
         if  i_target ~= 0
             % Check if target is a pool, this will increase costs
             % Careful: While indexing the map, we need to reverse the state
@@ -80,25 +83,27 @@ for i_state = 1:n_states
                 cost = pool_num_time_steps;
             end
             
-            % chance to be detected (extra cost to move to gate)
+            % chance to be detected (extra cost if detected)
             p_det = detectionSpace(i_target);
             
-            G(i_state, i_control) = (...
-                (cost + detected_additional_time_steps) * p_det + ...
-                cost * (1 - p_det));   
+            G(i_state, u) = (...
+                p_det * (cost + detected_additional_time_steps)  + ...
+                (1 - p_det) * cost);   
         end
     end
 
     % Taking picture has different costs
-    p_success = successSpace(i_state);
-    p_detected = detectionSpace(i_state);
+    p_success_pic = successSpace(i_state);
+    p_detected_pic = detectionSpace(i_state);
     G(i_state, 5) = (...
-        p_success * 1 + ...
-        (1 - p_success) * (...
-            p_detected * (1 + detected_additional_time_steps) + ...
-        	(1 - p_detected) * 1 ...
+        p_success_pic * 1 + ...
+        (1 - p_success_pic) * (...
+            p_detected_pic * (1 + detected_additional_time_steps) + ...
+        	(1 - p_detected_pic) * 1 ...
         )...
     );
+
+debug.time_stagecosts = toc(start);
 
 end
 end
