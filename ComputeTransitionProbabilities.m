@@ -42,59 +42,60 @@ function P = ComputeTransitionProbabilities( stateSpace, controlSpace, map, gate
 %           The entry P(i, j, l) represents the transition probability
 %           from state i to state j if control input l is applied.
 
+global debug
+start = tic;
+
 n_states = size(stateSpace,1);
-n_controls = size(controlSpace, 1);
-P = zeros(n_states, n_states, n_controls);
+
+% Initialize all probabilities with zero
+P = zeros(n_states, n_states, 5);
 
 % Detection and success probabilities for each state
 detectionSpace = ComputeDetectionSpace(stateSpace, cameras, map);
 successSpace = ComputeSuccessSpace(stateSpace, mansion, map);
 
+% Find index of gate state
 [~, gate_index] = ismember(gate, stateSpace, 'rows');
 
-comparisons = {...
-    % North
-    @(i,j) stateSpace(i, :) + [0 1] == stateSpace(j, :);
-    % West
-    @(i,j) stateSpace(i, :) + [-1 0] == stateSpace(j, :);
-    % South
-    @(i,j) stateSpace(i, :) + [0 -1] == stateSpace(j, :);
-    % East
-    @(i,j) stateSpace(i, :) + [1 0] == stateSpace(j, :);
-    % Picture
-    @(i,j) i == j
-};
+% Differences to get new state depending on movement (n w s e)
+n_movements = 4;
+state_diffs = [0 1; -1 0; 0 -1; 1 0];
 
-for u = 1:n_controls
-    comparison = comparisons{u};   
-    for i = 1:n_states
-        for j = 1:n_states
-            if comparison(i,j)
-                if u~=5
-                    % Probability for movements
-                    p_detected = detectionSpace(j);
-                    P(i,j, u) = 1 - p_detected;
-                    % Detected -> move to gate
-                    P(i, gate_index, u) = p_detected;
-                else
-                    % Probability of taking picture
-                    % If we are successful there will be no transition
-                    % anymore
-                    % Note, j == i here
-                    p_success = successSpace(j);
-                    p_detected = detectionSpace(j);
-                    if i ~= gate_index
-                        P(i, j, u) = (1 - p_success) * (1 - p_detected);
-                        P(i, gate_index, u) = (1 - p_success) * p_detected;
-                    else
-                        % Doesnt matter wheter we are detected, we are 
-                        % already at the gate
-                         P(i, j, u) = (1 - p_success);
-                    end
-                end
-            end
-        end
+for i = 1:n_states
+    % Control Input: Move
+    % Get target state indices for each movement
+    % Not all targets are valid states (index will be 0)
+    % Add position difference to state and look if result is in stateSpace
+    state = stateSpace(i, :);
+    target_states = repmat(state, n_movements, 1) + state_diffs;
+    [~, indices] = ismember(target_states, stateSpace, 'rows');
+    
+    for u = 1:n_movements
+        j = indices(u);
+        % check if target state exists (valid movement)
+        if  j ~= 0  
+            % Probability for movements
+            p_detected = detectionSpace(j);
+            P(i, j, u) = 1 - p_detected;
+            % Detected -> move to gate
+            P(i, gate_index, u) = p_detected;         
+        end  % Do nothing, no probability for impossible move
+    end            
+            
+    % Control Input: Take picture
+    % If we are successful there will be no transition anymore
+    % If unsuccessful, j can only be i or gate
+    p_success_pic = successSpace(i);
+    p_detected_pic = detectionSpace(i);
+    if i ~= gate_index
+        P(i, i, 5) = (1 - p_success_pic) * (1 - p_detected_pic);
+        P(i, gate_index, 5) = (1 - p_success_pic) * p_detected_pic;
+    else
+        % Doesnt matter if we are detected, we are already at the gate
+         P(i, i, 5) = (1 - p_success_pic);
     end
 end
+
+debug.time_transprob = toc(start);
 
 end
