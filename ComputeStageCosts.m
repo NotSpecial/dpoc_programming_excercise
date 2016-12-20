@@ -42,9 +42,6 @@ function G = ComputeStageCosts( stateSpace, controlSpace, map, gate, mansion, ca
 %           represents the cost if we are in state i and apply control
 %           input l.
 
-global debug
-start = tic;
-
 n_states = size(stateSpace,1);
 global detected_additional_time_steps;
 global pool_num_time_steps;
@@ -102,8 +99,6 @@ for i_state = 1:n_states
         	(1 - p_detected_pic) * 1 ...
         )...
     );
-
-debug.time_stagecosts = toc(start);
 
 end
 end

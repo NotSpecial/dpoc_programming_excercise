@@ -42,9 +42,6 @@ function P = ComputeTransitionProbabilities( stateSpace, controlSpace, map, gate
 %           The entry P(i, j, l) represents the transition probability
 %           from state i to state j if control input l is applied.
 
-global debug
-start = tic;
-
 n_states = size(stateSpace,1);
 
 % Initialize all probabilities with zero
@@ -95,8 +92,6 @@ for i = 1:n_states
          P(i, i, 5) = (1 - p_success_pic);
     end
 end
-
-debug.time_transprob = toc(start);
 
 end
 
