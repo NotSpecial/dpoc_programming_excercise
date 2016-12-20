@@ -36,6 +36,7 @@ start = tic;
 % Initialize J_opt and u_opt_ind
 % Initializing J_opt with 10 seems to work really well in most situations
 K = size(P, 1);
+L = size(P, 3);
 J_opt = 10 * ones(K, 1);
 u_opt_ind = zeros(K, 1);
 tolerance = 1e-5;
@@ -43,13 +44,18 @@ tolerance = 1e-5;
 % Debugging
 J_debug = J_opt;
 
+% Array for temporary equations to find minimum
+temp = zeros(K, L);
+
 while 1
     J_old = J_opt;   
-    
-    for i = 1:K
-        [J_opt(i), u_opt_ind(i)] = ...
-            min(G(i,:) + J_opt' * squeeze(P(i, :, :)));
+
+    % Iterating over control inputs instead of states scales much better
+    for u=1:L
+        temp(:, u) = G(:, u) + squeeze(P(:, :, u)) * J_opt;
     end
+    % Find optimal costs and control
+    [J_opt, u_opt_ind] = min(temp, [], 2);
     
     % debugging
     J_debug = [J_debug J_opt];
